@@ -81,4 +81,4 @@ for name, model in models.items():
     proba = model.predict_proba(user_encoded)[0]
     st.sidebar.markdown(f"**{name}: {pred}**")
     proba_df = pd.DataFrame({"Вид": model.classes_, 'Вероятность': proba})
-    st.sidebar.daataframe(proba_df.set_index("Вид"), use_container_width=True)
+    st.sidebar.dataframe(proba_df.set_index("Вид"), use_container_width=True)
