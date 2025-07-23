@@ -19,7 +19,7 @@ st.dataframe(df.sample(10), use_container_width=True)
 st.subheader("📊Визуализация данных")
 col1, col2 = st.columns(2)
 with col1:
-  fig1 = px.histogram(df, x="spcies", color="island", branmode="group", title="Распредуление выидов по островам")
+  fig1 = px.histogram(df, x="spcies", color="island", bramode="group", title="Распредуление выидов по островам")
   st.plotly_chart(fig1, use_container_width=True)
 with col2:
   fig2 = px.scatter(df, x="bill_length_mm", y="flipper_length_mm", color="species", title="Длина клюва vs Длина крыла")
