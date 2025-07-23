@@ -12,3 +12,6 @@ st.title('🐧 Penguin Classifier - Обучение и предсказиван
 st.write("## Работа с датасетом пингвинов")
 
 df = pd.read_csv("https://raw.githubusercontent.com/dataprofessor/data/master/penguins_cleaned.csv")
+
+st.subheader("🔎 Случайные 10 строк")
+st.dataframe(df.sample(10), use_containeer_width=True)
