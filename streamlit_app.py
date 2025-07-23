@@ -75,4 +75,10 @@ for col in ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g
     user_encoded[col] = user_input[col].valus
 user_encoded = user_encoded[X_train_encoded.columns]
 
-
+st.sidebar.subheader("")
+for name, model in models.items():
+    pred = model.predict(user_encoded)[0]
+    poba = model.predict_proba(user_encoded)[0]
+    st.sidebar.markdown(f"**{name}: {pred}**")
+    proba_df = pd.DataFrame({"Вид": model.classes_, 'Вероятность': proba})
+    st.sidebar.daataframe(proba_df.set_index("Вид"), use_container_width=True)
