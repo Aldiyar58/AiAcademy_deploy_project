@@ -8,7 +8,7 @@ import category_encoders as ce
 import plotly.express as px
 
 st.set_page_config(page_title="🐧 Penguin Classifier", layout="wide")
-st.title('🐧 Penguin Classifier - Обучение и предсказивание')
+st.title('🐧 Aldiyar and Aldiyar')
 st.write("## Работа с датасетом пингвинов")
 
 df = pd.read_csv("https://raw.githubusercontent.com/dataprofessor/data/master/penguins_cleaned.csv")
