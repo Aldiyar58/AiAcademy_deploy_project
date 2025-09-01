@@ -4,3 +4,4 @@ plotly
 category_encoders
 scikit-learn
 numpy
+joblib
