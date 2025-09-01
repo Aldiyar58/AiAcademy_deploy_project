@@ -1,84 +1,100 @@
 import streamlit as st
 import pandas as pd
-from sklearn.model_selection import  train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-import category_encoders as ce
-import plotly.express as px
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import joblib
+from sklearn.metrics import roc_curve, auc
 
-st.set_page_config(page_title="🐧 Penguin Classifier", layout="wide")
-st.title('🐧 Aldiyar and Aldiyar')
-st.write("## Работа с датасетом пингвинов")
+model = joblib.load("svc_model.pkl")
 
-df = pd.read_csv("https://raw.githubusercontent.com/dataprofessor/data/master/penguins_cleaned.csv")
+df = pd.read_csv("cardio_train.csv", sep=";")
 
-st.subheader("🔎 Случайные 10 строк")
-st.dataframe(df.sample(10), use_container_width=True)
+# SIDEBAR:
+st.sidebar.header("Введите свои данные")
 
-# Graphics
-st.subheader("📊Визуализация данных")
-col1, col2 = st.columns(2)
-with col1:
-    fig1 = px.histogram(df, x="species", color="island", barmode="group", title="Распредуление выидов по островам")
-    st.plotly_chart(fig1, use_container_width=True)
-with col2:
-    fig2 = px.scatter(df, x="bill_length_mm", y="flipper_length_mm", color="species", title="Длина клюва vs Длина крыла")
-    st.plotly_chart(fig2, use_container_width=True)
+age_years = st.sidebar.slider("Возраст (лет)", 18, 100, 50)
+age = age_years * 365  # переводим в дни
 
-# Split_dataset
-X = df.drop(['species'], axis=1)
-y = df['species']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+gender = st.sidebar.radio("Пол", options=[1, 2], format_func=lambda x: "Женщина" if x == 1 else "Мужчина")
+height = st.sidebar.number_input("Рост (см)", 100, 220, 170)
+weight = st.sidebar.number_input("Вес (кг)", 30, 200, 70)
+ap_hi = st.sidebar.number_input("Систолическое давление (ap_hi)", 80, 200, 120)
+ap_lo = st.sidebar.number_input("Диастолическое давление (ap_lo)", 50, 140, 80)
 
-encoder = ce.TargetEncoder(cols=['island', 'sex'])
-X_train_encoded = encoder.fit_transform(X_train, y_train)
-X_test_encoded = encoder.transform(X_test)
+cholesterol = st.sidebar.selectbox("Холестерин", options=[1, 2, 3],
+                                   format_func=lambda x: {1: "Норма", 2: "Выше нормы", 3: "Значительно выше"}[x])
 
-models = {
-    'Decision Tree': DecisionTreeClassifier(random_state=42),
-    'KNN': KNeighborsClassifier()
-}
+gluc = st.sidebar.selectbox("Глюкоза", options=[1, 2, 3],
+                            format_func=lambda x: {1: "Норма", 2: "Выше нормы", 3: "Значительно выше"}[x])
 
-results = []
-for name, model in models.items():
-    model.fit(X_train_encoded, y_train)
-    acc_train = accuracy_score(y_train, model.predict(X_train_encoded))
-    acc_test = accuracy_score(y_test, model.predict(X_test_encoded))
-    results.append({
-        'Model': name,
-        'Train Accuracy': round(acc_train, 2),
-        'Test Accuracy': round(acc_test, 2)
-    })
+smoke = st.sidebar.radio("Курение", options=[0, 1], format_func=lambda x: "Нет" if x == 0 else "Да")
+alco = st.sidebar.radio("Алкоголь", options=[0, 1], format_func=lambda x: "Нет" if x == 0 else "Да")
+active = st.sidebar.radio("Физическая активность", options=[0, 1], format_func=lambda x: "Нет" if x == 0 else "Да")
 
-st.write("### Сравнение моделей по точности")
-st.table(pd.DataFrame(results))
+# Собираем данные
+user_data = pd.DataFrame({
+    "age": [age],
+    "gender": [gender],
+    "height": [height],
+    "weight": [weight],
+    "ap_hi": [ap_hi],
+    "ap_lo": [ap_lo],
+    "cholesterol": [cholesterol],
+    "gluc": [gluc],
+    "smoke": [smoke],
+    "alco": [alco],
+    "active": [active],
+})
 
-st.sidebar.header("Предсказание по параметрам")
-island_input = st.sidebar.selectbox("Остров", df['island'].unique())
-sex_input = st.sidebar.selectbox("Пол", df['sex'].unique())
-bill_length = st.sidebar.slider("Длина клюва (мм)", float(df["bill_length_mm"].min()), float(df['bill_length_mm'].max()), float(df['bill_length_mm'].mean()))
-bill_depth = bill_length = st.sidebar.slider("Глубина клюва (мм)", float(df["bill_depth_mm"].min()), float(df['bill_depth_mm'].max()), float(df['bill_depth_mm'].mean()))
-flipper_length = st.sidebar.slider("Длина крыла (мм)", float(df["flipper_length_mm"].min()), float(df['flipper_length_mm'].max()), float(df['flipper_length_mm'].mean()))
-body_mass = st.sidebar.slider("Масса тела (г)", float(df["body_mass_g"].min()), float(df['body_mass_g'].max()), float(df['body_mass_g'].mean()))
+st.title("🫀 Cardiovascular Disease Prediction App")
 
-user_input = pd.DataFrame([{
-    'island': island_input,
-    'sex': sex_input,
-    'bill_length_mm': bill_length,
-    'bill_depth_mm': bill_depth,
-    'flipper_length_mm': flipper_length,
-    'body_mass_g': body_mass
-}])
-user_encoded = encoder.transform(user_input)
-for col in ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g']:
-    user_encoded[col] = user_input[col].values
-user_encoded = user_encoded[X_train_encoded.columns]
+plot_choice = st.selectbox(
+    "Выберите график:",
+    ["Нет", "Распределение классов", "Корреляция признаков", "Распределение возраста", "ROC-кривая"]
+)
 
-st.sidebar.subheader("")
-for name, model in models.items():
-    pred = model.predict(user_encoded)[0]
-    proba = model.predict_proba(user_encoded)[0]
-    st.sidebar.markdown(f"**{name}: {pred}**")
-    proba_df = pd.DataFrame({"Вид": model.classes_, 'Вероятность': proba})
-    st.sidebar.dataframe(proba_df.set_index("Вид"), use_container_width=True)
+if plot_choice == "Распределение классов":
+    plt.figure(figsize=(6,4))
+    sns.countplot(x="cardio", data=df)
+    st.pyplot(plt)
+
+elif plot_choice == "Корреляция признаков":
+    plt.figure(figsize=(10,8))
+    sns.heatmap(df.corr(), annot=False, cmap="coolwarm")
+    st.pyplot(plt)
+
+elif plot_choice == "Распределение возраста":
+    plt.figure(figsize=(6,4))
+    sns.histplot(df["age"]/365, bins=30, kde=True)
+    plt.xlabel("Возраст (лет)")
+    st.pyplot(plt)
+
+elif plot_choice == "ROC-кривая":
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import roc_curve, auc
+
+    X = df.drop(columns=["cardio"])
+    y = df["cardio"]
+    _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    y_score = model.predict_proba(X_test)[:,1]
+    fpr, tpr, _ = roc_curve(y_test, y_score)
+    roc_auc = auc(fpr, tpr)
+
+    plt.figure()
+    plt.plot(fpr, tpr, color="blue", lw=2, label=f"AUC = {roc_auc:.2f}")
+    plt.plot([0,1],[0,1], color="red", lw=2, linestyle="--")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC-кривая")
+    plt.legend(loc="lower right")
+    st.pyplot(plt)
+
+if st.sidebar.button("Сделать предсказание"):
+    prediction = model.predict(user_data)[0]
+    proba = model.predict_proba(user_data)[0][1]
+
+    st.subheader("Результат предсказания")
+    st.write(f"Вероятность наличия сердечно-сосудистого заболевания: **{proba:.2f}**")
+    st.write(f"Класс: **{'Есть заболевание' if prediction == 1 else 'Здоров'}**")
