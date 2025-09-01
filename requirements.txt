@@ -5,3 +5,5 @@ category_encoders
 scikit-learn
 numpy
 joblib
+matplotlib
+seaborn
